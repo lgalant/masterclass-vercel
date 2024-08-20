@@ -12,6 +12,7 @@ const {Client} = pkg;
 
 import cors from 'cors'
 app.use(cors());
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Hello World')
@@ -30,6 +31,21 @@ app.get('/canciones',async (req, res) => {
     res.send(result.rows)
   })
   
+app.post('/canciones',async (req, res) => {
+    const client = new Client(config);
+    await client.connect();
+    const cancion = req.body;
+    console.log("Cancion", cancion)
+
+    const result1 = await client.query("select max(id) from public.canciones");
+    const max_id = result1.rows[0].max
+    console.log("max id",max_id)
+    const result2 = await client.query("insert into public.canciones(id,album, duracion, nombre) values ($1,$2,$3,$4)",
+      [max_id+1,cancion.album, cancion.duracion, cancion.nombre ]);
+    await client.end();
+    console.log(result2.rows);
+    res.status(200).json({message:"Success!"})
+  })
 
 app.get('/artistas',async (req, res) => {
     const client = new Client(config);
