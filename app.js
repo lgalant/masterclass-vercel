@@ -12,7 +12,7 @@ const {Client} = pkg;
 
 import cors from 'cors'
 app.use(express.json());
-app.use(allowCors());
+app.use(cors());
 
 
 app.get('/', (req, res) => {
