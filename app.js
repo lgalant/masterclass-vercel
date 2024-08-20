@@ -19,7 +19,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/about', (req, res) => {
-  res.send('About route 🎉 ')
+  res.send('About route 🎉  ')
 })
 
 app.get('/canciones',async (req, res) => {
