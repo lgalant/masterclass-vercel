@@ -43,7 +43,6 @@ app.post('/canciones',async (req, res) => {
     const result2 = await client.query("insert into public.canciones(id,album, duracion, nombre) values ($1,$2,$3,$4)",
       [max_id+1,cancion.album, cancion.duracion, cancion.nombre ]);
     await client.end();
-    console.log(result2.rows);
     res.status(200).json({message:"Success!"})
   })
 
