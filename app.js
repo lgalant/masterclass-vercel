@@ -1,5 +1,6 @@
 
 import express from "express";
+import bcrypt from "bcrypt"
 
 
 const app = express()
@@ -67,6 +68,19 @@ app.get('/artistas',async (req, res) => {
     res.send(result.rows)
   })
 
+  app.post('/usuarios', async(req, res) => {
+    const client = new Client(config);
+    await client.connect();
+    const usuario = req.body;
+    const hashed =  await bcrypt.hash(  usuario.password, 10)
+    console.log("usuario", usuario)
+    console.log("hashed", hashed)
+    let result = await client.query("insert into usuarios(userid, email, nombre, password) values($1, $2, $3, $4)",
+      [usuario.userid, usuario.email, usuario.nombre, hashed])
+    await client.end();
+    console.log(result.rows)
+    res.send(result.rows)
+  })
 
 app.listen(PORT, () => {
     console.log(`✅ Server is running on port ${PORT}`);
