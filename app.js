@@ -1,6 +1,7 @@
 
 import express from "express";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 
 
 const app = express()
@@ -10,6 +11,8 @@ import {config} from './dbconfig.js'
 
 import pkg from 'pg'
 const {Client} = pkg;
+const jwtkey = "clavesupersegurajwt"
+
 
 import cors from 'cors'
 app.use(express.json());
@@ -25,7 +28,7 @@ app.get('/about', (req, res) => {
 })
 
 app.get('/canciones',async (req, res) => {
-    const client = new Client(config);
+  const client = new Client(config);
     await client.connect();
     let result = await client.query("select * from public.canciones");
     await client.end();
@@ -34,7 +37,7 @@ app.get('/canciones',async (req, res) => {
   })
   
 app.post('/canciones',async (req, res) => {
-    const client = new Client(config);
+  const client = new Client(config);
     await client.connect();
     const cancion = req.body;
     console.log("Cancion", cancion)
@@ -49,7 +52,7 @@ app.post('/canciones',async (req, res) => {
   })
 
 app.get('/artistas',async (req, res) => {
-    const client = new Client(config);
+  const client = new Client(config);
     await client.connect();
     let result = await client.query("select * from public.artistas");
     await client.end();
@@ -59,8 +62,8 @@ app.get('/artistas',async (req, res) => {
 
 
   app.get('/artistas/:id/canciones',async (req, res) => {
-    const {id} = req.params;
     const client = new Client(config);
+    const {id} = req.params;
     await client.connect();
     let result = await client.query("select c.* from public.canciones c, public.albumes a where c.album = a.id and artista=$1", [id]);
     await client.end();
@@ -80,6 +83,54 @@ app.get('/artistas',async (req, res) => {
     await client.end();
     console.log(result.rows)
     res.send(result.rows)
+  })
+
+
+  app.get('/usuarios/canciones',async (req, res) => {
+    const client = new Client(config);
+    await client.connect();
+    console.log("req", req.headers)
+    const jwtoken =req.headers.authorization.slice(7);
+    console.log("jwt", jwtoken)
+    try {
+
+      const payload = await jwt.verify(jwtoken, jwtkey)
+      console.log("Desencriptado:", payload)
+      let result = await client.query("select * from favoritos where userid=$1",[payload.userid])
+      res.send(result.rows)
+    }
+    catch(e) {
+      console.log("error jwt",e)
+      res.send("Error jwt")
+    }
+
+    await client.end();
+
+
+    
+
+  })
+
+  app.post('/login', async(req,res) => {
+    const client = new Client(config);
+    await client.connect();
+    const {userid, password} = req.body;
+
+    let result = await client.query("select * from usuarios where userid=$1",[userid]);
+    console.log(result.rows[0]);
+    const usuario_db = result.rows[0];
+    const hashed = usuario_db.password;
+
+    const match = await bcrypt.compare(password, hashed);
+    await client.end();
+
+    if(match) {
+      const token = jwt.sign({userid:usuario_db.userid},jwtkey)
+      res.send({"nombre":usuario_db.nombre, "email":usuario_db.email, "token":token})
+      return;
+    }
+    res.send("Inexistente")
+
   })
 
 app.listen(PORT, () => {
